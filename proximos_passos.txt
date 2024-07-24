@@ -1,0 +1,6 @@
+colocar versao deploy. na web. 
+avançar em um serviço como por exemplo: e aprender usar mysql / postgrees
+heroku (pago)
+dokku
+pythonanywhere
+digitaocean
