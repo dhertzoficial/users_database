@@ -87,6 +87,18 @@ def health_check():
     except sqlite3.Error as e:
         return jsonify({'status': 'Database connection faild'}), 500
 
+# ENDPOINT PARA VERIFICAR SE ID EXISTE
+@app.route('/users/<int:id>', methods=['GET']) 
+def get_user_by_id(id):
+    connection, cursor = to_connect()
+    cursor.execute('SELECT * FROM users WHERE id = ?', (id,))
+    user = cursor.fetchone()
+    connection.close()
+    if user:
+        return jsonify(user)
+    else:
+        return jsonify({'error': 'User not found'}), 404
+
 if __name__ == '__main__':
     app.run(debug=True) # INICIA O SERVIDOR EM MODO DEPURAÇÃO (FORNECE DETALHES DE ERROS E REINICIA AUTO QUANDO CÓDIGO ALTERADO)
 
