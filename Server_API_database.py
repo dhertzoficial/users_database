@@ -2,13 +2,13 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import sqlite3
 
-# INICIALIZAÇÃO DA APLICAÇÃO FLASK
-app = Flask(__name__) # CRIA UMA INSTÂNCIA DA CLASSE FLASK
-CORS(app) # Habilita CORS para a aplicação Flask
+# Flask Application Initialization
+app = Flask(__name__) # Create an Instance of the Flask Class
+CORS(app) # Enable CORS for the Flask Application
 
 def to_connect():
-    connection = sqlite3.connect("database.db") # CRIA CONEXÃO COM DATABASE
-    cursor = connection.cursor() # CURSOS O QUAL É USADO PARA EXECUTAR COMANDOS SQL NO DATABASE
+    connection = sqlite3.connect("database.db") # Create Connection to the Database
+    cursor = connection.cursor() # Cursor Is Used to Execute SQL Commands on the Database
     return connection, cursor
 
 def check_id_exists(user_id):
@@ -18,8 +18,15 @@ def check_id_exists(user_id):
     connection.close()
     return exists
 
-# ENDPOINT PARA OBTER USUÁRIOS
-@app.route('/users', methods=['GET']) # DEFINE A ROTA PARA O ENDPOINT - ACEITA MÉTODO GET
+def check_email_exists(email):
+    connection, cursor = to_connect()
+    cursor.execute("SELECT EXISTS(SELECT 1 FROM users WHERE email = ?)", (email,))
+    exists = cursor.fetchone()[0]
+    connection.close()
+    return exists
+
+# Endpoint to Get Users
+@app.route('/users', methods=['GET']) # Set the Route for the Endpoint - Supports GET Method
 def get_users():
     try:
         connection, cursor = to_connect()
@@ -37,7 +44,7 @@ def get_users():
 # ENDPOINT TO ADD USERS
 @app.route('/users', methods=['POST'])
 def add_user():
-    data = request.get_json() # OBTEM DADOS ENVIADOS EM UM DICIO PYTHON CONVERTENDO PARA FORMATO JSON
+    data = request.get_json() # Gets Data Sent as a Python Dictionary and Converts It to JSON Format
     try:
         connection, cursor = to_connect()
         cursor.execute('INSERT INTO users (email, password, name, status) VALUES (?, ?, ?, ?)',
@@ -55,7 +62,7 @@ def update_user(id):
     try:
         connection, cursor = to_connect()
 
-        # VERIFICA QUAIS CAMPOS FORAM ENVIADOS NO JSON E ATUALIZA SOMENTE OS MESMOS
+        # Verifies Which Fields Were Included in the JSON and Updates Only Those
         fields = []
         values = []
 
@@ -114,5 +121,11 @@ def id_exists_endpoint():
     exists = check_id_exists(user_id)
     return jsonify({'exists': exists})
 
+@app.route('/users/email_exists', methods=['GET'])
+def email_exists_endpoint():
+    email = request.args.get('email')
+    exists = check_email_exists(email)
+    return jsonify({'exists': exists})
+
 if __name__ == '__main__':
-    app.run(debug=True) # INICIA O SERVIDOR EM MODO DEPURAÇÃO (FORNECE DETALHES DE ERROS E REINICIA AUTO QUANDO CÓDIGO ALTERADO)
+    app.run(debug=True) # Starts the Server in Debug Mode (Provides Error Details and Auto-Restarts on Code Changes)

@@ -14,5 +14,5 @@ def to_connect():
     connection.commit()
     connection.close()
 
-# Executar a função para criar o banco de dados e a tabela
+# Execute the Function to Create the Database and Table
 to_connect()
