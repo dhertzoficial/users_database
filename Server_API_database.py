@@ -2,9 +2,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import sqlite3
 
-# Flask Application Initialization
-app = Flask(__name__) # Create an Instance of the Flask Class
-CORS(app) # Enable CORS for the Flask Application
+
+# Inicialização do Flask e do banco de dados
+app = Flask(__name__)
+CORS(app)  # Habilita CORS para a aplicação Flask
 
 def to_connect():
     connection = sqlite3.connect("database.db") # Create Connection to the Database
@@ -38,20 +39,6 @@ def get_users():
             v = {"id": user[0], "email": user[1], "password": user[2], "name": user[3], "status": user[4]}
             result.append(v)
         return jsonify(result)
-    except sqlite3.Error as e:
-        return jsonify({'error': str(e)}), 500
-
-# ENDPOINT TO ADD USERS
-@app.route('/users', methods=['POST'])
-def add_user():
-    data = request.get_json() # Gets Data Sent as a Python Dictionary and Converts It to JSON Format
-    try:
-        connection, cursor = to_connect()
-        cursor.execute('INSERT INTO users (email, password, name, status) VALUES (?, ?, ?, ?)',
-                       (data['email'], data['password'], data['name'], data['status']))
-        connection.commit()
-        connection.close()
-        return jsonify({'message': 'User added successfully'})
     except sqlite3.Error as e:
         return jsonify({'error': str(e)}), 500
 
@@ -115,17 +102,64 @@ def health_check():
     except sqlite3.Error as e:
         return jsonify({'status': 'Database connection failed', 'error': str(e)}), 500
 
+# Endpoint to check if user id exists
 @app.route('/users/exists', methods=['GET'])
 def id_exists_endpoint():
     user_id = request.args.get('id')
     exists = check_id_exists(user_id)
     return jsonify({'exists': exists})
 
+# Endpoint to check if email exists
 @app.route('/users/email_exists', methods=['GET'])
 def email_exists_endpoint():
     email = request.args.get('email')
     exists = check_email_exists(email)
     return jsonify({'exists': exists})
+
+# ENDPOINT TO ADD USERS
+@app.route('/users', methods=['POST'])
+def add_user():
+    data = request.get_json() # Gets Data Sent as a Python Dictionary and Converts It to JSON Format
+    try:
+        connection, cursor = to_connect()
+        cursor.execute('INSERT INTO users (email, password, name, status) VALUES (?, ?, ?, ?)',
+                       (data['email'], data['password'], data['name'], data['status']))
+        connection.commit()
+        connection.close()
+        return jsonify({'message': 'User added successfully'})
+    except sqlite3.Error as e:
+        return jsonify({'error': str(e)}), 500
+
+# ENDPOINT TO AUTHENTICATE USER
+@app.route('/authenticate', methods=['POST'])
+def authenticate_user():
+    data = request.get_json()
+    print(f"Received data: {data}")  # Verifica se o servidor está recebendo dados
+    
+    email = data.get('email')
+    password = data.get('password')
+
+    try:
+        connection, cursor = to_connect()
+        cursor.execute("SELECT id, email, password FROM users WHERE email = ?", (email,))
+        user = cursor.fetchone()
+        connection.close()
+
+        if user and user[2] == password:
+            response = jsonify({'message': 'Authentication successful', 'user_id': user[0]})
+            print("Response JSON:", response.get_data(as_text=True))  # Log para depuração
+            return response
+        else:
+            response = jsonify({'message': 'Invalid email or password'})
+            print("Response JSON:", response.get_data(as_text=True))  # Log para depuração
+            return response, 401
+    except Exception as e:
+        response = jsonify({'error': str(e)})
+        print("Response JSON:", response.get_data(as_text=True))  # Log para depuração
+        return response, 500
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True) # Starts the Server in Debug Mode (Provides Error Details and Auto-Restarts on Code Changes)
