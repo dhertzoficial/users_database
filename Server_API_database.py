@@ -2,6 +2,12 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import sqlite3
 
+# ANSI CODE FOR COLOR
+RED = '\033[91m'
+RESET = '\033[0m'
+GREEN = '\033[92m'
+YELLOW = '\033[93m'
+
 
 # Inicialização do Flask e do banco de dados
 app = Flask(__name__)
@@ -146,11 +152,11 @@ def authenticate_user():
         connection.close()
 
         if user and user[2] == password:
-            response = jsonify({'message': 'Authentication successful', 'user_id': user[0]})
+            response = jsonify({'message': f'{GREEN}Authentication successful{RESET}', 'user_id': user[0]})
             print("Response JSON:", response.get_data(as_text=True))  # Log para depuração
             return response
         else:
-            response = jsonify({'message': 'Invalid email or password'})
+            response = jsonify({'message': f'{RED}Invalid email or password{RESET}'})
             print("Response JSON:", response.get_data(as_text=True))  # Log para depuração
             return response, 401
     except Exception as e:
